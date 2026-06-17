@@ -25,8 +25,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build
 
-      - name: Remove preview Android SDK platforms
+      - name: Remove preview and incompatible Android SDK platforms
         run: |
+          rm -rf $ANDROID_SDK_ROOT/platforms/android-35*
           rm -rf $ANDROID_SDK_ROOT/platforms/android-36*
 
 
