@@ -5,7 +5,7 @@
     <key>CFBundleDisplayName</key>
     <string>Tortu</string>
     <key>CFBundleExecutable</key>
-    <string>Tortu</string>
+    <string>tortu</string>
     <key>CFBundleIdentifier</key>
     <string>cyou.tortu.client</string>
     <key>CFBundleName</key>
