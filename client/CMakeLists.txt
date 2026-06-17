@@ -17,6 +17,12 @@ qt_add_executable(Tortu
     networkmanager.h networkmanager.cpp
     audioplayer.h audioplayer.cpp
 )
+if(APPLE)
+    target_sources(Tortu PRIVATE ios_helper.h ios_helper.mm)
+endif()
+if(ANDROID)
+    target_sources(Tortu PRIVATE android_helper.h android_helper.cpp)
+endif()
 set_target_properties(Tortu PROPERTIES OUTPUT_NAME "tortu")
 if(APPLE)
     set_target_properties(Tortu PROPERTIES
@@ -25,6 +31,7 @@ if(APPLE)
         MACOSX_BUNDLE_GUI_IDENTIFIER "cyou.tortu.client"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
         MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
     )
 endif()
 if(ANDROID)
@@ -32,6 +39,7 @@ if(ANDROID)
         QT_ANDROID_MIN_SDK_VERSION 26
         QT_ANDROID_TARGET_SDK_VERSION 34
         QT_ANDROID_COMPILE_SDK_VERSION 34
+        QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android-sources"
     )
 endif()
 
@@ -75,6 +83,9 @@ target_link_libraries(Tortu PRIVATE
     Qt6::Multimedia
     Qt6::Network
 )
+if(APPLE)
+    target_link_libraries(Tortu PRIVATE "-framework MediaPlayer" "-framework AVFoundation")
+endif()
 
 # Installation Rules for Packaging
 install(TARGETS Tortu DESTINATION bin)

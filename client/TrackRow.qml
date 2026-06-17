@@ -96,7 +96,7 @@ Rectangle {
         // 3. Track Info (Title & Artist)
         Column {
             id: titleCol
-            width: isMobile ? (parent.width - cvrItem.width - favBtn.width - timeText.width - 6 * parent.spacing) : (parent.width * 0.4)
+            width: isMobile ? (parent.width - cvrItem.width - favBtn.width - timeText.width - 6 * parent.spacing - 20) : (parent.width * 0.4)
             anchors.verticalCenter: parent.verticalCenter
             spacing: 4
 
@@ -106,6 +106,7 @@ Rectangle {
                 font.bold: true
                 font.pixelSize: 14
                 elide: Text.ElideRight
+                width: parent.width
             }
 
             Text {
@@ -113,6 +114,7 @@ Rectangle {
                 color: "#B3B3B3"
                 font.pixelSize: 12
                 elide: Text.ElideRight
+                width: parent.width
             }
         }
 

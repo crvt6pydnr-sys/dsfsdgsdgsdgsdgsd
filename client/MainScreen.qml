@@ -89,6 +89,8 @@ Rectangle {
         if (idx >= 0 && idx < tracks.length) {
             var track = tracks[idx];
             mainScreen.currentTrack = track;
+            player.title = track.title;
+            player.artist = track.artist;
             player.source = track.audio_url;
             player.play();
         }
@@ -168,6 +170,12 @@ Rectangle {
         target: player
         function onFinished() {
             mainScreen.playNextTrack()
+        }
+        function onNextTrackRequested() {
+            mainScreen.playNextTrack()
+        }
+        function onPrevTrackRequested() {
+            mainScreen.playPrevTrack()
         }
     }
 
@@ -937,6 +945,8 @@ Rectangle {
                                     }
                                 } else {
                                     mainScreen.currentTrack = modelData
+                                    player.title = modelData.title
+                                    player.artist = modelData.artist
                                     player.source = modelData.audio_url
                                     player.play()
                                 }
@@ -1091,64 +1101,67 @@ Rectangle {
             }
         }
 
-        // 3. LYRICS PANEL (Right)
-        Rectangle {
-            id: lyricsPanel
-            width: showLyrics ? 300 : 0
-            height: parent.height
-            color: "#181818"
-            border.color: "#282828"
-            border.width: 1
-            visible: showLyrics
-            clip: true
+    }
 
-            Behavior on width {
-                NumberAnimation { duration: 200 }
+    // 3. LYRICS PANEL (Right, sibling of mainRow)
+    Rectangle {
+        id: lyricsPanel
+        width: showLyrics ? (isMobile ? mainScreen.width : 300) : 0
+        anchors.top: mainRow.top
+        anchors.bottom: mainRow.bottom
+        anchors.right: mainRow.right
+        color: "#181818"
+        border.color: "#282828"
+        border.width: 1
+        visible: showLyrics
+        clip: true
+
+        Behavior on width {
+            NumberAnimation { duration: 200 }
+        }
+
+        Column {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 16
+
+            Row {
+                width: parent.width
+                Text {
+                    text: "Lyrics"
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pixelSize: 18
+                    width: parent.width - 30
+                }
+                Button {
+                    width: 30
+                    height: 30
+                    background: Rectangle { color: "transparent" }
+                    contentItem: Image {
+                        width: 12
+                        height: 12
+                        anchors.centerIn: parent
+                        source: "qrc:/Tortu/icons/close.svg"
+                    }
+                    onClicked: showLyrics = false
+                }
             }
 
-            Column {
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 16
+            ScrollView {
+                id: lyricsScroll
+                width: parent.width
+                height: parent.height - 80
+                clip: true
 
-                Row {
-                    width: parent.width
-                    Text {
-                        text: "Lyrics"
-                        color: "#FFFFFF"
-                        font.bold: true
-                        font.pixelSize: 18
-                        width: parent.width - 30
-                    }
-                    Button {
-                        width: 30
-                        height: 30
-                        background: Rectangle { color: "transparent" }
-                        contentItem: Image {
-                            width: 12
-                            height: 12
-                            anchors.centerIn: parent
-                            source: "qrc:/Tortu/icons/close.svg"
-                        }
-                        onClicked: showLyrics = false
-                    }
-                }
-
-                ScrollView {
-                    id: lyricsScroll
-                    width: parent.width
-                    height: parent.height - 80
-                    clip: true
-
-                    Text {
-                        text: (currentTrack && currentTrack.lyrics) ? currentTrack.lyrics : "No lyrics available for this song."
-                        color: (currentTrack && currentTrack.lyrics) ? "#1DB954" : "#B3B3B3"
-                        font.bold: true
-                        font.pixelSize: 16
-                        wrapMode: Text.WordWrap
-                        width: lyricsScroll.width - 16
-                        lineHeight: 1.4
-                    }
+                Text {
+                    text: (currentTrack && currentTrack.lyrics) ? currentTrack.lyrics : "No lyrics available for this song."
+                    color: (currentTrack && currentTrack.lyrics) ? "#1DB954" : "#B3B3B3"
+                    font.bold: true
+                    font.pixelSize: 16
+                    wrapMode: Text.WordWrap
+                    width: lyricsScroll.width - 16
+                    lineHeight: 1.4
                 }
             }
         }
@@ -1786,7 +1799,7 @@ Rectangle {
                     }
                     Text {
                         text: "Home"
-                        color: activeTab === "home" ? "#FFFFFF" : "#B3B3B3"
+                        color: activeTab === "home" ? "#1DB954" : "#B3B3B3"
                         font.pixelSize: 10
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
@@ -1811,7 +1824,7 @@ Rectangle {
                     }
                     Text {
                         text: "Search"
-                        color: activeTab === "search" ? "#FFFFFF" : "#B3B3B3"
+                        color: activeTab === "search" ? "#1DB954" : "#B3B3B3"
                         font.pixelSize: 10
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
@@ -1836,7 +1849,7 @@ Rectangle {
                     }
                     Text {
                         text: "Favorites"
-                        color: activeTab === "favorites" ? "#FFFFFF" : "#B3B3B3"
+                        color: activeTab === "favorites" ? "#1DB954" : "#B3B3B3"
                         font.pixelSize: 10
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
@@ -1861,7 +1874,7 @@ Rectangle {
                     }
                     Text {
                         text: "Playlists"
-                        color: (activeTab === "playlists" || activeTab.startsWith("playlist_")) ? "#FFFFFF" : "#B3B3B3"
+                        color: (activeTab === "playlists" || activeTab.startsWith("playlist_")) ? "#1DB954" : "#B3B3B3"
                         font.pixelSize: 10
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
