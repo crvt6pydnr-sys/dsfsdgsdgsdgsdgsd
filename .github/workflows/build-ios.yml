@@ -39,7 +39,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphoneos \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
-            -DQT_HOST_PATH=$GITHUB_WORKSPACE/../Qt/6.6.3/clang_64 \
+            -DQT_HOST_PATH=$GITHUB_WORKSPACE/../Qt/6.6.3/macos \
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Xcode Project
