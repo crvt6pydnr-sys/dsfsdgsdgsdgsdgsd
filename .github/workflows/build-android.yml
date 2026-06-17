@@ -25,6 +25,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build
 
+      - name: Remove preview Android SDK platforms
+        run: |
+          rm -rf $ANDROID_SDK_ROOT/platforms/android-36*
+
+
       - name: Install Host Qt 6 (Linux gcc_64)
         uses: jurplel/install-qt-action@v3
         with:

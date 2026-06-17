@@ -27,6 +27,13 @@ if(APPLE)
         MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
     )
 endif()
+if(ANDROID)
+    set_target_properties(Tortu PROPERTIES
+        QT_ANDROID_MIN_SDK_VERSION 26
+        QT_ANDROID_TARGET_SDK_VERSION 34
+        QT_ANDROID_COMPILE_SDK_VERSION 34
+    )
+endif()
 
 qt_add_qml_module(Tortu
     URI Tortu
