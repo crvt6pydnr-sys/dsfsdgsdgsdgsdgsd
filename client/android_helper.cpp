@@ -5,6 +5,8 @@
 
 #include <QJniObject>
 #include <QJniEnvironment>
+#include <QCoreApplication>
+#include <QtCore/qcoreapplication_platform.h>
 #include <jni.h>
 
 static void (*s_playCallback)() = nullptr;
@@ -50,7 +52,7 @@ void initAndroidAudioSession(void (*playCallback)(), void (*pauseCallback)(), vo
 }
 
 void updateAndroidNowPlayingInfo(const QString &title, const QString &artist, bool isPlaying, qint64 duration, qint64 position) {
-    QJniObject activity = QJniObject::queryActivity();
+    QJniObject activity = QNativeInterface::QAndroidApplication::context();
     if (!activity.isValid()) return;
 
     QJniObject jTitle = QJniObject::fromString(title);
