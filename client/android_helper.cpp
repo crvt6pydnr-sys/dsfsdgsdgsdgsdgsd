@@ -1,3 +1,4 @@
+#include <QtGlobal>
 #include "android_helper.h"
 
 #ifdef Q_OS_ANDROID

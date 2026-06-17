@@ -1,6 +1,8 @@
 #ifndef ANDROID_HELPER_H
 #define ANDROID_HELPER_H
 
+#include <QtGlobal>
+
 #ifdef Q_OS_ANDROID
 
 #include <QString>
