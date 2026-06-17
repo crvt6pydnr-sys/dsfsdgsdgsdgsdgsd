@@ -1,0 +1,51 @@
+name: Build macOS Client
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-13
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Qt 6
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.3'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
+          modules: 'qtmultimedia qtsvg'
+
+      - name: Configure CMake
+        run: |
+          mkdir -p build_mac
+          cmake -S client -B build_mac \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH=$QT_ROOT_DIR
+
+      - name: Build Project
+        run: |
+          cmake --build build_mac --config Release --parallel 4
+
+      - name: Run macdeployqt
+        run: |
+          # Bundles QML modules, plugins, and libraries into the app bundle
+          macdeployqt build_mac/tortu.app -qmldir=client -verbose=1
+
+      - name: Package as DMG
+        run: |
+          # Create a standard macOS DMG archive
+          hdiutil create -fs HFS+ -srcfolder build_mac/tortu.app -volname "Tortu" tortu-macos-x64.dmg
+
+      - name: Upload DMG Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tortu-macos-x64-dmg
+          path: tortu-macos-x64.dmg

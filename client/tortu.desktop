@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Tortu
+GenericName=Music Player
+Comment=Listen, Share, Search
+Icon=tortu
+Exec=tortu
+Terminal=false
+Categories=AudioVideo;Audio;Music;Player;Qt;

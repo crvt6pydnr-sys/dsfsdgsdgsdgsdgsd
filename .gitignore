@@ -1,0 +1,18 @@
+# CMake build directories
+/client/build/
+/client/build_win/
+/client/build_linux/
+/client/build_mac/
+
+# Package binaries
+/dist/
+/tortu-windows-x64.zip
+/tortu-1.0.0-Linux.deb
+/tortu-1.0.0-Linux.rpm
+*.dmg
+*.pkg
+
+# Temporary and local files
+/scratch/
+*.local
+.DS_Store
