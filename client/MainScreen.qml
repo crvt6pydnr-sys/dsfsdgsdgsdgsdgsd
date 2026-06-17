@@ -18,6 +18,7 @@ Rectangle {
     property var searchedPlaylists: []
     property string playlistCoverPath: ""
     property var activePlaylistDetails: null
+    property bool isMobile: width < 650
 
     onActiveTabChanged: {
         activePlaylistDetails = null
@@ -247,18 +248,18 @@ Rectangle {
         onTriggered: mainScreen.refreshTracks()
     }
 
-    // MAIN LAYOUT
     Row {
         id: mainRow
         width: parent.width
-        height: parent.height - 90 // Leave room for player bar
+        height: parent.height - playerBar.height - (isMobile ? 60 : 0)
 
         // 1. SIDEBAR (Left)
         Rectangle {
             id: sidebar
-            width: 240
+            width: isMobile ? 0 : 240
             height: parent.height
             color: "#000000"
+            visible: !isMobile
 
             Column {
                 anchors.fill: parent
@@ -506,10 +507,9 @@ Rectangle {
             }
         }
 
-        // 2. MAIN CONTENT (Center/Right)
         Rectangle {
             id: mainContent
-            width: parent.width - sidebar.width - (showLyrics ? 300 : 0)
+            width: isMobile ? parent.width : (parent.width - sidebar.width - (showLyrics ? 300 : 0))
             height: parent.height
             color: "#121212"
             radius: 8
@@ -537,7 +537,7 @@ Rectangle {
                     // Search input
                     TextField {
                         id: searchField
-                        width: 300
+                        width: isMobile ? (topBar.width - userBadge.width - 96) : 300
                         height: 40
                         placeholderText: "What do you want to play?"
                         color: "#FFFFFF"
@@ -556,6 +556,24 @@ Rectangle {
                             networkManager.fetchTracks(text)
                             networkManager.fetchPlaylists(text)
                         }
+                    }
+
+                    // Mobile Upload button
+                    Button {
+                        id: uploadBtnMobile
+                        width: 32
+                        height: 32
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.right: userBadge.left
+                        anchors.rightMargin: 12
+                        visible: isMobile
+                        background: Rectangle { color: "transparent" }
+                        contentItem: Image {
+                            source: "qrc:/Tortu/icons/upload.svg"
+                            width: 20; height: 20
+                            anchors.centerIn: parent
+                        }
+                        onClicked: uploadOverlay.visible = true
                     }
 
                     // User Badge
@@ -666,6 +684,7 @@ Rectangle {
                         height: activeTab === "favorites" ? 180 : 120
                         color: activeTab === "favorites" ? "#1A4C30" : (activeTab.startsWith("playlist_") ? "#3C4B64" : "#282828")
                         radius: 0
+                        visible: activeTab !== "playlists"
 
                         Row {
                             anchors.fill: parent
@@ -715,6 +734,24 @@ Rectangle {
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 8
+
+                                Button {
+                                    visible: isMobile && activeTab.startsWith("playlist_")
+                                    width: 140
+                                    height: 24
+                                    background: Rectangle { color: "transparent" }
+                                    contentItem: Text {
+                                        text: "← Back to Playlists"
+                                        color: "#1DB954"
+                                        font.bold: true
+                                        font.pixelSize: 12
+                                    }
+                                    onClicked: {
+                                        activeTab = "playlists"
+                                        networkManager.fetchPlaylists()
+                                    }
+                                }
+
                                 Text {
                                     text: activeTab.startsWith("playlist_") ? "PLAYLIST" : "COLLECTION"
                                     color: "#FFFFFF"
@@ -856,7 +893,7 @@ Rectangle {
                     Item {
                         width: parent.width
                         height: 36
-                        visible: tracks.length > 0
+                        visible: tracks.length > 0 && !isMobile && activeTab !== "playlists"
 
                         Row {
                             id: headerRow
@@ -885,6 +922,7 @@ Rectangle {
                         height: count * 56
                         interactive: false // Managed by ScrollView
                         model: mainScreen.tracks
+                        visible: activeTab !== "playlists"
                         delegate: TrackRow {
                             width: parent.width
                             trackData: modelData
@@ -919,7 +957,7 @@ Rectangle {
                     Column {
                         width: parent.width
                         spacing: 12
-                        visible: tracks.length === 0
+                        visible: tracks.length === 0 && activeTab !== "playlists"
                         anchors.horizontalCenter: parent.horizontalCenter
                         
                         Text {
@@ -937,6 +975,116 @@ Rectangle {
                             font.pixelSize: 14
                             horizontalAlignment: Text.AlignHCenter
                             width: parent.width
+                        }
+                    }
+
+                    // PLAYLISTS VIEW FOR MOBILE
+                    Column {
+                        width: parent.width
+                        spacing: 16
+                        visible: activeTab === "playlists"
+
+                        Row {
+                            width: parent.width
+                            Text {
+                                text: "Your Playlists"
+                                color: "#FFFFFF"
+                                font.bold: true
+                                font.pixelSize: 22
+                                font.family: "Outfit"
+                                width: parent.width - 32
+                            }
+                            Button {
+                                width: 32
+                                height: 32
+                                anchors.verticalCenter: parent.verticalCenter
+                                background: Rectangle { color: "transparent" }
+                                contentItem: Text {
+                                    text: "+"
+                                    color: "#FFFFFF"
+                                    font.pixelSize: 24
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+                                onClicked: createPlaylistOverlay.visible = true
+                            }
+                        }
+
+                        Column {
+                            width: parent.width
+                            spacing: 12
+
+                            Repeater {
+                                model: mainScreen.playlists
+                                delegate: Rectangle {
+                                    width: parent.width
+                                    height: 64
+                                    color: "#181818"
+                                    radius: 8
+                                    border.color: "#282828"
+                                    border.width: 1
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                        onClicked: (mouse) => {
+                                            if (mouse.button === Qt.RightButton) {
+                                                playlistContextMenu.targetPlaylist = modelData
+                                                playlistContextMenu.popup()
+                                            } else {
+                                                activeTab = "playlist_" + modelData.id
+                                                networkManager.fetchPlaylistTracks(modelData.id)
+                                            }
+                                        }
+                                    }
+
+                                    Row {
+                                        spacing: 12
+                                        anchors.fill: parent
+                                        anchors.margins: 8
+
+                                        Rectangle {
+                                            width: 48
+                                            height: 48
+                                            radius: 4
+                                            color: "#282828"
+                                            clip: true
+                                            anchors.verticalCenter: parent.verticalCenter
+
+                                            Image {
+                                                id: mobilePlaylistCover
+                                                anchors.fill: parent
+                                                source: modelData.cover_url ? modelData.cover_url : ""
+                                                fillMode: Image.PreserveAspectCrop
+                                                visible: modelData.cover_url !== null && status === Image.Ready
+                                            }
+                                            Image {
+                                                source: "qrc:/Tortu/icons/library.svg"
+                                                width: 20; height: 20
+                                                anchors.centerIn: parent
+                                                visible: !modelData.cover_url || mobilePlaylistCover.status !== Image.Ready
+                                            }
+                                        }
+
+                                        Column {
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            spacing: 4
+
+                                            Text {
+                                                text: modelData.name
+                                                color: "#FFFFFF"
+                                                font.bold: true
+                                                font.pixelSize: 14
+                                            }
+                                            Text {
+                                                text: modelData.creator ? "By " + modelData.creator : "Playlist"
+                                                color: "#B3B3B3"
+                                                font.pixelSize: 11
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1010,18 +1158,32 @@ Rectangle {
     Rectangle {
         id: playerBar
         width: parent.width
-        height: 90
+        height: isMobile ? 64 : 90
         color: "#181818"
-        anchors.bottom: parent.bottom
+        anchors.bottom: isMobile ? bottomNavBar.top : parent.bottom
         border.color: "#282828"
         border.width: 1
+
+        Rectangle {
+            width: parent.width
+            height: 2
+            color: "#282828"
+            anchors.top: parent.top
+            visible: isMobile
+
+            Rectangle {
+                width: (player.duration > 0) ? (player.position / player.duration) * parent.width : 0
+                height: parent.height
+                color: "#1DB954"
+            }
+        }
 
         Row {
             anchors.fill: parent
             anchors.leftMargin: 16
             anchors.rightMargin: 16
+            visible: !isMobile
 
-            // Left Section: Cover & Title
             Rectangle {
                 width: parent.width * 0.28
                 height: parent.height
@@ -1032,7 +1194,6 @@ Rectangle {
                     spacing: 12
                     visible: currentTrack !== null
 
-                    // Small Cover Fix
                     Rectangle {
                         id: coverRect
                         width: 56
@@ -1057,7 +1218,6 @@ Rectangle {
                         }
                     }
 
-                    // Details
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 150
@@ -1081,7 +1241,6 @@ Rectangle {
                         }
                     }
 
-                    // Heart button (SVG)
                     Button {
                         width: 32
                         height: 32
@@ -1102,7 +1261,6 @@ Rectangle {
                 }
             }
 
-            // Center Section: Playback controls and seekbar
             Column {
                 width: parent.width * 0.44
                 height: parent.height
@@ -1110,12 +1268,10 @@ Rectangle {
                 anchors.verticalCenterOffset: 12
                 spacing: 8
                 
-                // Play/Pause button row
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 24
                     
-                    // Shuffle
                     Button {
                         width: 32
                         height: 32
@@ -1126,7 +1282,6 @@ Rectangle {
                             anchors.centerIn: parent
                         }
                     }
-                    // Prev
                     Button {
                         width: 32
                         height: 32
@@ -1139,7 +1294,6 @@ Rectangle {
                         onClicked: mainScreen.playPrevTrack()
                     }
                     
-                    // Play / Pause Circle
                     Button {
                         id: playPauseBtn
                         width: 36
@@ -1164,7 +1318,6 @@ Rectangle {
                         }
                     }
 
-                    // Next
                     Button {
                         width: 32
                         height: 32
@@ -1176,7 +1329,6 @@ Rectangle {
                         }
                         onClicked: mainScreen.playNextTrack()
                     }
-                    // Repeat
                     Button {
                         width: 32
                         height: 32
@@ -1189,12 +1341,10 @@ Rectangle {
                     }
                 }
 
-                // Slider seekbar row
                 Row {
                     width: parent.width
                     spacing: 8
 
-                    // Format Time helper
                     function formatMs(ms) {
                         if (isNaN(ms) || ms < 0) return "0:00";
                         var t = Math.floor(ms / 1000);
@@ -1261,7 +1411,6 @@ Rectangle {
                 }
             }
 
-            // Right Section: Lyrics button & Volume slider
             Rectangle {
                 width: parent.width * 0.28
                 height: parent.height
@@ -1272,7 +1421,6 @@ Rectangle {
                     anchors.right: parent.right
                     spacing: 12
 
-                    // Lyrics Toggle Button
                     Button {
                         id: lyricsBtn
                         width: 32
@@ -1286,14 +1434,12 @@ Rectangle {
                         onClicked: showLyrics = !showLyrics
                     }
 
-                    // Volume Icon (SVG)
                     Image {
                         source: player.volume > 0 ? (player.volume > 0.5 ? "qrc:/Tortu/icons/volume-high.svg" : "qrc:/Tortu/icons/volume-medium.svg") : "qrc:/Tortu/icons/volume-mute.svg"
                         width: 16; height: 16
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
-                    // Volume Slider
                     Slider {
                         id: volumeSlider
                         width: 80
@@ -1332,6 +1478,119 @@ Rectangle {
                             player.volume = value
                         }
                     }
+                }
+            }
+        }
+
+        Row {
+            anchors.fill: parent
+            anchors.leftMargin: 12
+            anchors.rightMargin: 12
+            spacing: 12
+            visible: isMobile
+            
+            Rectangle {
+                width: 44
+                height: 44
+                radius: 4
+                color: "#282828"
+                clip: true
+                anchors.verticalCenter: parent.verticalCenter
+                
+                Image {
+                    id: mobileBarCover
+                    anchors.fill: parent
+                    source: (currentTrack && currentTrack.cover_url) ? currentTrack.cover_url : ""
+                    fillMode: Image.PreserveAspectCrop
+                    visible: currentTrack && currentTrack.cover_url !== null && mobileBarCover.status === Image.Ready
+                }
+                Image {
+                    source: "qrc:/Tortu/icons/library.svg"
+                    width: 16; height: 16
+                    anchors.centerIn: parent
+                    visible: !currentTrack || !currentTrack.cover_url || mobileBarCover.status !== Image.Ready
+                }
+            }
+            
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - 200
+                spacing: 2
+                visible: currentTrack !== null
+                
+                Text {
+                    text: currentTrack ? currentTrack.title : ""
+                    color: "#FFFFFF"
+                    font.bold: true
+                    font.pixelSize: 13
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
+                Text {
+                    text: currentTrack ? currentTrack.artist : ""
+                    color: "#B3B3B3"
+                    font.pixelSize: 11
+                    elide: Text.ElideRight
+                    width: parent.width
+                }
+            }
+            
+            Item {
+                width: parent.width - 200
+                height: 1
+                visible: currentTrack === null
+            }
+            
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 4
+                
+                Button {
+                    width: 36
+                    height: 36
+                    background: Rectangle { color: "transparent" }
+                    contentItem: Image {
+                        source: (currentTrack && currentTrack.is_favorite) ? "qrc:/Tortu/icons/heart-filled.svg" : "qrc:/Tortu/icons/heart.svg"
+                        width: 18; height: 18
+                        anchors.centerIn: parent
+                    }
+                    onClicked: {
+                        if (currentTrack) {
+                            networkManager.toggleFavorite(currentTrack.id)
+                        }
+                    }
+                }
+                
+                Button {
+                    width: 36
+                    height: 36
+                    background: Rectangle { color: "transparent" }
+                    contentItem: Image {
+                        source: player.playing ? "qrc:/Tortu/icons/pause.svg" : "qrc:/Tortu/icons/play.svg"
+                        width: 20; height: 20
+                        anchors.centerIn: parent
+                    }
+                    onClicked: {
+                        if (player.source !== "") {
+                            if (player.playing) {
+                                player.pause()
+                            } else {
+                                player.play()
+                            }
+                        }
+                    }
+                }
+                
+                Button {
+                    width: 36
+                    height: 36
+                    background: Rectangle { color: "transparent" }
+                    contentItem: Image {
+                        source: "qrc:/Tortu/icons/skip-next.svg"
+                        width: 18; height: 18
+                        anchors.centerIn: parent
+                    }
+                    onClicked: mainScreen.playNextTrack()
                 }
             }
         }
@@ -1479,7 +1738,7 @@ Rectangle {
         radius: 24
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 110 // Above the player bar
+        anchors.bottomMargin: playerBar.height + (isMobile ? bottomNavBar.height : 0) + 20
         z: 100
         visible: false
         
@@ -1496,6 +1755,122 @@ Rectangle {
             id: shareNotificationTimer
             interval: 2000
             onTriggered: shareNotification.visible = false
+        }
+    }
+
+    Rectangle {
+        id: bottomNavBar
+        width: parent.width
+        height: 60
+        color: "#181818"
+        anchors.bottom: parent.bottom
+        visible: isMobile
+        border.color: "#282828"
+        border.width: 1
+        z: 10
+        
+        Row {
+            anchors.fill: parent
+            
+            Button {
+                width: parent.width / 4
+                height: parent.height
+                background: Rectangle { color: "transparent" }
+                contentItem: Column {
+                    spacing: 4
+                    anchors.centerIn: parent
+                    Image {
+                        source: "qrc:/Tortu/icons/home.svg"
+                        width: 20; height: 20
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                    Text {
+                        text: "Home"
+                        color: activeTab === "home" ? "#FFFFFF" : "#B3B3B3"
+                        font.pixelSize: 10
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+                onClicked: {
+                    activeTab = "home"
+                    networkManager.fetchTracks()
+                }
+            }
+            
+            Button {
+                width: parent.width / 4
+                height: parent.height
+                background: Rectangle { color: "transparent" }
+                contentItem: Column {
+                    spacing: 4
+                    anchors.centerIn: parent
+                    Image {
+                        source: "qrc:/Tortu/icons/search.svg"
+                        width: 20; height: 20
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                    Text {
+                        text: "Search"
+                        color: activeTab === "search" ? "#FFFFFF" : "#B3B3B3"
+                        font.pixelSize: 10
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+                onClicked: {
+                    activeTab = "search"
+                    networkManager.fetchTracks(searchField.text)
+                }
+            }
+            
+            Button {
+                width: parent.width / 4
+                height: parent.height
+                background: Rectangle { color: "transparent" }
+                contentItem: Column {
+                    spacing: 4
+                    anchors.centerIn: parent
+                    Image {
+                        source: "qrc:/Tortu/icons/heart-filled.svg"
+                        width: 20; height: 20
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                    Text {
+                        text: "Favorites"
+                        color: activeTab === "favorites" ? "#FFFFFF" : "#B3B3B3"
+                        font.pixelSize: 10
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+                onClicked: {
+                    activeTab = "favorites"
+                    networkManager.fetchFavorites()
+                }
+            }
+            
+            Button {
+                width: parent.width / 4
+                height: parent.height
+                background: Rectangle { color: "transparent" }
+                contentItem: Column {
+                    spacing: 4
+                    anchors.centerIn: parent
+                    Image {
+                        source: "qrc:/Tortu/icons/library.svg"
+                        width: 20; height: 20
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                    Text {
+                        text: "Playlists"
+                        color: (activeTab === "playlists" || activeTab.startsWith("playlist_")) ? "#FFFFFF" : "#B3B3B3"
+                        font.pixelSize: 10
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+                }
+                onClicked: {
+                    activeTab = "playlists"
+                    networkManager.fetchPlaylists()
+                }
+            }
         }
     }
 }

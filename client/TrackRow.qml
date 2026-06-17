@@ -11,6 +11,7 @@ Rectangle {
     property bool hovered: false
     property var trackData
     property bool isPlayingNow: false
+    property bool isMobile: width < 550
 
     signal playClicked()
     signal favoriteClicked()
@@ -40,10 +41,11 @@ Rectangle {
         // 1. Play Index / Play Icon
         Rectangle {
             id: idxItem
-            width: 24
+            width: isMobile ? 0 : 24
             height: 24
             color: "transparent"
             anchors.verticalCenter: parent.verticalCenter
+            visible: !isMobile
 
             Image {
                 width: 12
@@ -94,7 +96,7 @@ Rectangle {
         // 3. Track Info (Title & Artist)
         Column {
             id: titleCol
-            width: parent.width * 0.4
+            width: isMobile ? (parent.width - cvrItem.width - favBtn.width - timeText.width - 6 * parent.spacing) : (parent.width * 0.4)
             anchors.verticalCenter: parent.verticalCenter
             spacing: 4
 
@@ -122,7 +124,8 @@ Rectangle {
             font.pixelSize: 13
             anchors.verticalCenter: parent.verticalCenter
             elide: Text.ElideRight
-            width: parent.width * 0.25
+            width: isMobile ? 0 : parent.width * 0.25
+            visible: !isMobile
         }
 
         // Spacer to push items to the right
