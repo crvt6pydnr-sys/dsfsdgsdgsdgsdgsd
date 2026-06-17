@@ -21,7 +21,7 @@ jobs:
           host: 'mac'
           target: 'desktop'
           arch: 'clang_64'
-          modules: 'qtmultimedia qtsvg'
+          modules: 'qtmultimedia'
 
       - name: Configure CMake
         run: |
