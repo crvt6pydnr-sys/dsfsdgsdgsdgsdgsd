@@ -1,0 +1,67 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    runs-on: macos-13
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Host Qt 6 (macOS clang_64)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.3'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
+
+      - name: Install Target Qt 6 (iOS)
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.3'
+          host: 'mac'
+          target: 'ios'
+          arch: 'ios'
+          modules: 'qtmultimedia'
+
+      - name: Configure CMake for iOS
+        run: |
+          mkdir -p build_ios
+          cmake -S client -B build_ios -G Xcode \
+            -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/../Qt/6.6.3/ios/lib/cmake/Qt6/qt.toolchain.cmake \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphoneos \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DQT_HOST_PATH=$GITHUB_WORKSPACE/../Qt/6.6.3/clang_64 \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Xcode Project
+        run: |
+          cd build_ios
+          xcodebuild -project Tortu.xcodeproj \
+            -scheme Tortu \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            clean build
+
+      - name: Package as IPA (Sideloadable)
+        run: |
+          mkdir -p build_ios/Payload
+          cp -r build_ios/Release-iphoneos/Tortu.app build_ios/Payload/
+          cd build_ios
+          zip -r tortu.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tortu-ios-ipa
+          path: build_ios/tortu.ipa
